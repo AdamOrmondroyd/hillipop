@@ -15,8 +15,21 @@ from cobaya.conventions import _packages_path
 from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from cobaya.log import LoggedError
 
-from . import foregrounds_v3 as fg
+from . import foregrounds as fg
 from . import tools
+
+fg_list = {
+    "dust": fg.dust_model,
+    "ksz": fg.ksz_model,
+    "ps_radio": fg.ps_radio,
+    "ps_dusty": fg.ps_dusty,
+    "cib": fg.cib_model,
+    "tsz": fg.tsz_model,
+    "szxcib": fg.szxcib_model,
+    "ps": fg.ps,
+}
+
+
 
 # ------------------------------------------------------------------------------------------------
 # Likelihood
@@ -100,49 +113,43 @@ class _HillipopLikelihood(_InstallableLikelihood):
         # Init foregrounds TT
         fgsTT = []
         if self._is_mode["TT"]:
-            fgsTT.append(fg.ps_radio(self.lmax, self.frequencies))
-            fgsTT.append(fg.ps_dusty(self.lmax, self.frequencies))
+            for name in self.foregrounds["TT"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
 
-            fg_lookup = {
-                "dust": fg.dust_model,
-                "SZ": fg.sz_model,
-                "CIB": fg.cib_model,
-                "kSZ": fg.ksz_model,
-                "SZxCIB": fg.szxcib_model,
-            }
-            for name, model in fg_lookup.items():
-                if not self.foregrounds.get(name):
-                    continue
                 self.log.debug("Adding '{}' foreground for TT".format(name))
-                filename = os.path.join(self.data_folder, self.foregrounds.get(name))
-                kwargs = dict(mode="TT") if name == "dust" else {}
-                fgsTT.append(model(self.lmax, self.frequencies, filename, **kwargs))
+                kwargs = dict(lmax=self.lmax, freqs=self.frequencies, mode="TT")
+                if isinstance(self.foregrounds["TT"][name], str):
+                    kwargs["filename"] = os.path.join(self.data_folder, self.foregrounds["TT"][name])
+                fgsTT.append(fg_list[name](**kwargs))
         self.fgs.append(fgsTT)
-
-        # Get dust filename
-        dust_filename = (
-            os.path.join(self.data_folder, self.foregrounds.get("dust"))
-            if self.foregrounds.get("dust")
-            else None
-        )
 
         # Init foregrounds EE
         fgsEE = []
         if self._is_mode["EE"]:
-            if dust_filename:
-                fgsEE.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="EE"))
+            for name in self.foregrounds["EE"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
+                self.log.debug("Adding '{}' foreground for EE".format(name))
+                filename = os.path.join(self.data_folder, self.foregrounds["EE"].get(name))
+                fgsEE.append(
+                    fg_list[name](self.lmax, self.frequencies, mode="EE", filename=filename)
+                )
         self.fgs.append(fgsEE)
 
         # Init foregrounds TE
         fgsTE = []
-        if self._is_mode["TE"]:
-            if dust_filename:
-                fgsTE.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="TE"))
-        self.fgs.append(fgsTE)
         fgsET = []
-        if self._is_mode["ET"]:
-            if dust_filename:
-                fgsET.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="ET"))
+        if self._is_mode["TE"]:
+            for name in self.foregrounds["TE"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
+                self.log.debug("Adding '{}' foreground for TE".format(name))
+                filename = os.path.join(self.data_folder, self.foregrounds["TE"].get(name))
+                kwargs = dict(lmax=self.lmax, freqs=self.frequencies, filename=filename)
+                fgsTE.append(fg_list[name](mode="TE", **kwargs))
+                fgsET.append(fg_list[name](mode="ET", **kwargs))
+        self.fgs.append(fgsTE)
         self.fgs.append(fgsET)
 
         self.log.info("Initialized!")
@@ -357,7 +364,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
         Xl = np.array(Xl)
         chi2 = Xl @ self._invkll @ Xl
 
-        self.log.debug("chi2/ndof = {}/{}".format(chi2, len(Xl)))
+        self.log.debug("chi2/ndof = {:.2f}/{}".format(chi2, len(Xl)))
         return chi2
 
     def get_requirements(self):
@@ -445,6 +452,13 @@ class TT(_HillipopLikelihood):
     """
 
     install_options = {"download_url": "{}/planck_2020_hillipop_TT.tar.gz".format(data_url)}
+
+class TTps(TT):
+    """High-L TT Likelihood for Polarized Planck Spectra-based Gaussian-approximated likelihood with
+    foreground models for cross-correlation spectra from Planck 100, 143 and 217 GHz split-frequency
+    maps
+
+    """
 
 
 class EE(_HillipopLikelihood):

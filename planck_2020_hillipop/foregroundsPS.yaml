@@ -4,8 +4,7 @@
     ksz: foregrounds/kSZ_planck_npipe_model.fits
     cib: foregrounds/CIB_planck_npipe_model_v3
     szxcib: foregrounds/SZxCIB_planck_npipe_model
-    ps_radio: null
-    ps_dusty: null
+    ps: null
   EE:
     dust: foregrounds/DUST_planck_npipe_model
   TE:
