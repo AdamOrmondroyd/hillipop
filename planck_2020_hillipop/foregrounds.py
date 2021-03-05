@@ -68,9 +68,9 @@ class ps(fgmodel):
         for f1, f2 in self._cross_frequencies:
             freq1 = self.freqs[f1]
             freq2 = self.freqs[f2]
-            dl_ps.append( pars["Aps_{}x{}".format(freq1,freq2)] * ll2pi)
+            dl_ps.append( pars["Aps_{}x{}".format(freq1,freq2)] * self.ll2pi)
 
-        return np.array(self.dl_radio)
+        return np.array(dl_ps)
 
 
 
