@@ -197,7 +197,13 @@ class _HillipopLikelihood(_InstallableLikelihood):
     def _read_dl_xspectra(self, basename, field=1):
         """
         Read xspectra from Xpol [Dl in K^2]
-        Output: Dl in muK^2
+
+        Input:
+            basename: string, name of the file to be read
+        Optionnal:
+            field: HDU from FITS file (data=1, error=2)
+        Output:
+            dldata: narray(mode,nmap,nell) [Dl in muK^2]
         """
         self.log.debug("Reading cross-spectra {}".format("errors" if field == 2 else ""))
 
@@ -284,11 +290,27 @@ class _HillipopLikelihood(_InstallableLikelihood):
             return xcl, xw8
 
     def _compute_residuals(self, pars, dlth, mode=0):
+        """
+        Compute residual (data - model) with model = (1+c1+c2)*peff*(cmb + fg)
+        """
 
         # calibration
         cal = []
         for m1, m2 in combinations(range(self._nmap), 2):
             cal.append(pars["A_planck"] ** 2 * (1.0 + pars["cal%s" % self._mapnames[m1]] + pars["cal%s" % self._mapnames[m2]]))
+
+        # polar efficiency
+        peff = []
+        for m1, m2 in combinations(range(self._nmap), 2):
+            if mode == :1 #EE
+                pe = pars["pe%s" % self._mapnames[m1]] + pars["pe%s" % self._mapnames[m2]]
+            elif mode == 2: #TE
+                pe = pars["pe%s" % self._mapnames[m1]]
+            elif mode == 3: #ET
+                pe = pars["pe%s" % self._mapnames[m2]]
+            else: #TT
+                pe = 0.
+            peff.append(1.0 + pe)
 
         # Data
         dldata = self._dldata[mode]
@@ -299,7 +321,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
             dlmodel += fg.compute_dl(pars)
 
         # Compute Rl = Dl - Dlth
-        Rspec = np.array([dldata[xs] - cal[xs] * dlmodel[xs] for xs in range(self._nxspec)])
+        Rspec = np.array([dldata[xs] - peff[xs] * cal[xs] * dlmodel[xs] for xs in range(self._nxspec)])
 
         return Rspec
 
