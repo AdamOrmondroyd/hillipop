@@ -1,3 +1,4 @@
+  #Overall-calibration uncertainty
   A_planck:
     prior:
       dist: norm
@@ -11,6 +12,7 @@
     latex: y_\mathrm{cal}
     renames: calPlanck
 
+  #Inter-calibration (reference 143A)
   cal100A:
     prior:
       dist: norm
@@ -18,7 +20,6 @@
       scale: 0.002
     proposal: 0.001
     latex: cal_\mathrm{100A}
-
   cal100B:
     prior:
       dist: norm
@@ -26,11 +27,9 @@
       scale: 0.002
     proposal: 0.001
     latex: cal_\mathrm{100B}
-
   cal143A:
     value: 0.0
     latex: cal_\mathrm{143A}
-
   cal143B:
     prior:
       dist: norm
@@ -38,7 +37,6 @@
       scale: 0.002
     proposal: 0.001
     latex: cal_\mathrm{143B}
-
   cal217A:
     prior:
       dist: norm
@@ -46,7 +44,6 @@
       scale: 0.002
     proposal: 0.001
     latex: cal_\mathrm{217A}
-
   cal217B:
     prior:
       dist: norm
@@ -55,7 +52,7 @@
     proposal: 0.001
     latex: cal_\mathrm{217B}
 
-
+  #Polar Efficiency
   pe100A:
     value: 0.0
     latex: \epsilon_\mathrm{100A}

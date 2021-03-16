@@ -24,6 +24,12 @@ calib_params = {
     "cal143B": 0.0,
     "cal217A": 0.0,
     "cal217B": 0.0,
+    "pe100A": 0.0,
+    "pe100B": 0.0,
+    "pe143A": 0.0,
+    "pe143B": 0.0,
+    "pe217A": 0.0,
+    "pe217B": 0.0,
 }
 
 nuisance_params = {
