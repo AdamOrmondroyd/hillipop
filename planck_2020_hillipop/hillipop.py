@@ -18,6 +18,7 @@ from cobaya.log import LoggedError
 from . import foregrounds as fg
 from . import tools
 
+#list of available foreground models
 fg_list = {
     "dust": fg.dust_model,
     "ksz": fg.ksz_model,
@@ -284,12 +285,10 @@ class _HillipopLikelihood(_InstallableLikelihood):
 
     def _compute_residuals(self, pars, dlth, mode=0):
 
-        # nuisances
+        # calibration
         cal = []
         for m1, m2 in combinations(range(self._nmap), 2):
-            cal1 = "cal%s" % self._mapnames[m1]
-            cal2 = "cal%s" % self._mapnames[m2]
-            cal.append(pars["A_planck"] ** 2 * (1.0 + pars[cal1] + pars[cal2]))
+            cal.append(pars["A_planck"] ** 2 * (1.0 + pars["cal%s" % self._mapnames[m1]] + pars["cal%s" % self._mapnames[m2]]))
 
         # Data
         dldata = self._dldata[mode]
