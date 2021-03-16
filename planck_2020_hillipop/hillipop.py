@@ -302,7 +302,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
         # polar efficiency
         peff = []
         for m1, m2 in combinations(range(self._nmap), 2):
-            if mode == :1 #EE
+            if mode == 1: #EE
                 pe = pars["pe%s" % self._mapnames[m1]] + pars["pe%s" % self._mapnames[m2]]
             elif mode == 2: #TE
                 pe = pars["pe%s" % self._mapnames[m1]]
