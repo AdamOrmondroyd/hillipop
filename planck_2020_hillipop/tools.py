@@ -8,8 +8,6 @@ import numpy as np
 import scipy.ndimage as nd
 from numpy.linalg import *
 
-from . import foregrounds_v3 as fg
-
 tagnames = ["TT", "EE", "TE", "ET"]
 
 

@@ -15,8 +15,22 @@ from cobaya.conventions import _packages_path
 from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from cobaya.log import LoggedError
 
-from . import foregrounds_v3 as fg
+from . import foregrounds as fg
 from . import tools
+
+
+#list of available foreground models
+fg_list = {
+    "dust": fg.dust_model,
+    "ksz": fg.ksz_model,
+    "ps_radio": fg.ps_radio,
+    "ps_dusty": fg.ps_dusty,
+    "cib": fg.cib_model,
+    "tsz": fg.tsz_model,
+    "szxcib": fg.szxcib_model,
+}
+
+
 
 # ------------------------------------------------------------------------------------------------
 # Likelihood
@@ -31,6 +45,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
     xspectra_basename: Optional[str]
     covariance_matrix_file: Optional[str]
     foregrounds: Optional[list]
+    correct_aberration = False
 
     def initialize(self):
         # Set path to data
@@ -62,6 +77,8 @@ class _HillipopLikelihood(_InstallableLikelihood):
         self._nxspec = self._nmap * (self._nmap - 1) // 2
         self._xspec2xfreq = self._xspec2xfreq()
         self.log.debug("frequencies = {}".format(self.frequencies))
+
+        self.log.debug("Correction aberration {}".format("ON" if self.correct_aberration else "OFF"))
 
         # Get likelihood name and add the associated mode
         likelihood_name = self.__class__.__name__
@@ -100,49 +117,43 @@ class _HillipopLikelihood(_InstallableLikelihood):
         # Init foregrounds TT
         fgsTT = []
         if self._is_mode["TT"]:
-            fgsTT.append(fg.ps_radio(self.lmax, self.frequencies))
-            fgsTT.append(fg.ps_dusty(self.lmax, self.frequencies))
+            for name in self.foregrounds["TT"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
 
-            fg_lookup = {
-                "dust": fg.dust_model,
-                "SZ": fg.sz_model,
-                "CIB": fg.cib_model,
-                "kSZ": fg.ksz_model,
-                "SZxCIB": fg.szxcib_model,
-            }
-            for name, model in fg_lookup.items():
-                if not self.foregrounds.get(name):
-                    continue
                 self.log.debug("Adding '{}' foreground for TT".format(name))
-                filename = os.path.join(self.data_folder, self.foregrounds.get(name))
-                kwargs = dict(mode="TT") if name == "dust" else {}
-                fgsTT.append(model(self.lmax, self.frequencies, filename, **kwargs))
+                kwargs = dict(lmax=self.lmax, freqs=self.frequencies, mode="TT")
+                if isinstance(self.foregrounds["TT"][name], str):
+                    kwargs["filename"] = os.path.join(self.data_folder, self.foregrounds["TT"][name])
+                fgsTT.append(fg_list[name](**kwargs))
         self.fgs.append(fgsTT)
-
-        # Get dust filename
-        dust_filename = (
-            os.path.join(self.data_folder, self.foregrounds.get("dust"))
-            if self.foregrounds.get("dust")
-            else None
-        )
 
         # Init foregrounds EE
         fgsEE = []
         if self._is_mode["EE"]:
-            if dust_filename:
-                fgsEE.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="EE"))
+            for name in self.foregrounds["EE"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
+                self.log.debug("Adding '{}' foreground for EE".format(name))
+                filename = os.path.join(self.data_folder, self.foregrounds["EE"].get(name))
+                fgsEE.append(
+                    fg_list[name](self.lmax, self.frequencies, mode="EE", filename=filename)
+                )
         self.fgs.append(fgsEE)
 
         # Init foregrounds TE
         fgsTE = []
-        if self._is_mode["TE"]:
-            if dust_filename:
-                fgsTE.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="TE"))
-        self.fgs.append(fgsTE)
         fgsET = []
-        if self._is_mode["ET"]:
-            if dust_filename:
-                fgsET.append(fg.dust_model(self.lmax, self.frequencies, dust_filename, mode="ET"))
+        if self._is_mode["TE"]:
+            for name in self.foregrounds["TE"].keys():
+                if name not in fg_list.keys():
+                    raise LoggedError(self.log, "Unkown foreground model '%s'!", name)
+                self.log.debug("Adding '{}' foreground for TE".format(name))
+                filename = os.path.join(self.data_folder, self.foregrounds["TE"].get(name))
+                kwargs = dict(lmax=self.lmax, freqs=self.frequencies, filename=filename)
+                fgsTE.append(fg_list[name](mode="TE", **kwargs))
+                fgsET.append(fg_list[name](mode="ET", **kwargs))
+        self.fgs.append(fgsTE)
         self.fgs.append(fgsET)
 
         self.log.info("Initialized!")
@@ -275,20 +286,40 @@ class _HillipopLikelihood(_InstallableLikelihood):
         else:
             return xcl, xw8
 
+    def _aberration(self, dl):
+        """
+        Correct aberration following [Joeng et la. 2014] and [Yasini&Pierpaoli 2019]
+        DCl = -beta . <cos(theta)> . Cl . dlnCl/dlnl = -beta . l . dCl/dl
+        """
+        beta = 0.0012309
+        #mean cos on mask for each map
+        meancos = [0.01230244257950947,0.01230244257950947,0.010526877161519057,0.010526877161519057,0.018833637301141317,0.018833637301141317]
+        lth = np.arange(self.lmax + 1)
+        ddl = []
+        for m1, m2 in combinations(range(self._nmap), 2):
+            ddl.append( -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:] * np.diff(dl) )
+        
+        return np.array(ddl)
+
     def _compute_residuals(self, pars, dlth, mode=0):
+        """
+        Compute residual for each cross-spectra (before averaging to cross-frequencies)
+        """
 
         # nuisances
         cal = []
         for m1, m2 in combinations(range(self._nmap), 2):
-            cal1 = "cal%s" % self._mapnames[m1]
-            cal2 = "cal%s" % self._mapnames[m2]
+            cal1 = "cal{}".format( self._mapnames[m1])
+            cal2 = "cal{}".format( self._mapnames[m2])
             cal.append(pars["A_planck"] ** 2 * (1.0 + pars[cal1] + pars[cal2]))
 
         # Data
         dldata = self._dldata[mode]
 
         # Model
-        dlmodel = [dlth[mode]] * self._nxspec
+        dlmodel = np.array([dlth[mode]] * self._nxspec)
+        if self.correct_aberration:
+            dlmodel += self._aberration(dlth[mode])
         for fg in self.fgs[mode]:
             dlmodel += fg.compute_dl(pars)
 
