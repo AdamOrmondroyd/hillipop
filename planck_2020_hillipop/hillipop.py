@@ -455,6 +455,15 @@ class TTTEEE(_HillipopLikelihood):
     install_options = {"download_url": "{}/planck_2020_hillipop_TTTEEE.tar.gz".format(data_url)}
 
 
+class TTEE(_HillipopLikelihood):
+    """High-L TT+EE Likelihood for Polarized Planck Spectra-based Gaussian-approximated likelihood
+    with foreground models for cross-correlation spectra from Planck 100, 143 and 217 GHz
+    split-frequency maps
+
+    """
+
+    install_options = {"download_url": "{}/planck_2020_hillipop_TTEE.tar.gz".format(data_url)}
+
 class TTTE(_HillipopLikelihood):
     """High-L TT+TE Likelihood for Polarized Planck Spectra-based Gaussian-approximated likelihood
     with foreground models for cross-correlation spectra from Planck 100, 143 and 217 GHz
