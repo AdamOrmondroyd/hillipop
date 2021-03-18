@@ -297,7 +297,9 @@ class _HillipopLikelihood(_InstallableLikelihood):
         lth = np.arange(self.lmax + 1)
         ddl = []
         for m1, m2 in combinations(range(self._nmap), 2):
-            ddl.append( -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:] * np.diff(dl) )
+            tmp = np.zeros( self.lmax+1)
+            tmp[1:] = -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:] * np.diff(dl)
+            ddl.append( tmp )
         
         return np.array(ddl)
 
@@ -385,6 +387,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
             # select multipole range
             Xl += self._select_spectra(Rl / Wl, mode=2)
 
+        #Compute chi2
         Xl = np.array(Xl)
         chi2 = Xl @ self._invkll @ Xl
 
