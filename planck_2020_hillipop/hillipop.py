@@ -305,9 +305,9 @@ class _HillipopLikelihood(_InstallableLikelihood):
             if mode == 1: #EE
                 pe = pars["pe%s" % self._mapnames[m1]] + pars["pe%s" % self._mapnames[m2]]
             elif mode == 2: #TE
-                pe = pars["pe%s" % self._mapnames[m1]]
-            elif mode == 3: #ET
                 pe = pars["pe%s" % self._mapnames[m2]]
+            elif mode == 3: #ET
+                pe = pars["pe%s" % self._mapnames[m1]]
             else: #TT
                 pe = 0.
             peff.append(1.0 + pe)
