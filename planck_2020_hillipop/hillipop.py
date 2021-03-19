@@ -79,10 +79,11 @@ class _HillipopLikelihood(_InstallableLikelihood):
 
         # Get likelihood name and add the associated mode
         likelihood_name = self.__class__.__name__
-        self._is_mode = {mode: mode in likelihood_name for mode in ["TT", "TE", "EE"]}
+        likelihood_modes = [likelihood_name[i:i+2] for i in range(0,len(likelihood_name),2)]
+        self._is_mode = {mode: mode in likelihood_modes for mode in ["TT", "TE", "EE"]}
         self._is_mode["ET"] = self._is_mode["TE"]
         self.log.debug("mode = {}".format(self._is_mode))
-
+        
         # Multipole ranges
         filename = os.path.join(self.data_folder, self.multipoles_range_file)
         self._lmins, self._lmaxs = self._set_multipole_ranges(filename)
