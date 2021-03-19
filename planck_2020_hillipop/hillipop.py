@@ -79,6 +79,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
         self.log.debug("frequencies = {}".format(self.frequencies))
 
         self.log.debug("Correction aberration {}".format("ON" if self.correct_aberration else "OFF"))
+        print("Correction aberration {}".format("ON" if self.correct_aberration else "OFF"))
 
         # Get likelihood name and add the associated mode
         likelihood_name = self.__class__.__name__
@@ -285,7 +286,7 @@ class _HillipopLikelihood(_InstallableLikelihood):
             return xcl / xw8
         else:
             return xcl, xw8
-
+    
     def _aberration(self, dl):
         """
         Correct aberration following [Joeng et la. 2014] and [Yasini&Pierpaoli 2019]
@@ -293,14 +294,19 @@ class _HillipopLikelihood(_InstallableLikelihood):
         """
         beta = 0.0012309
         #mean cos on mask for each map
-        meancos = [0.01230244257950947,0.01230244257950947,0.010526877161519057,0.010526877161519057,0.018833637301141317,0.018833637301141317]
+        meancos = [0.01230244257950947,0.01230244257950947,
+                   0.01052687716151905,0.01052687716151905,
+                   0.01883363730114131,0.01883363730114131]
         lth = np.arange(self.lmax + 1)
+        cl_to_dl = lth*(lth+1)/2/np.pi
+        cl_to_dl[0] = 1
+        cl = dl / cl_to_dl
         ddl = []
         for m1, m2 in combinations(range(self._nmap), 2):
             tmp = np.zeros( self.lmax+1)
-            tmp[1:] = -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:] * np.diff(dl)
-            ddl.append( tmp )
-        
+            tmp[1:-1] += -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:-1] * np.diff(cl[1:])
+            tmp[1:-1] += -beta * np.sqrt(meancos[m1]*meancos[m2]) * lth[1:-1] * np.diff(cl[:-1])
+            ddl.append( tmp*cl_to_dl/2)
         return np.array(ddl)
 
     def _compute_residuals(self, pars, dlth, mode=0):
