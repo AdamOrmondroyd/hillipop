@@ -1,44 +1,44 @@
   Aps_100x100:
     prior:
       dist: norm
-      loc: 15.0
-      scale: 2.
-    proposal: 2.
+      loc: 0.00032
+      scale: 1.4e-5
+    proposal: 1e-5
     latex: A^\mathrm{PS}(100x100)
   Aps_100x143:
     prior:
       dist: norm
-      loc: 10.0
-      scale: 2.
-    proposal: 2.
+      loc: 0.00013
+      scale: 8.3e-6
+    proposal: 1e-5
     latex: A^\mathrm{PS}(100x143)
   Aps_100x217:
     prior:
       dist: norm
-      loc: 10.0
-      scale: 2.
-    proposal: 2.
+      loc: 9.86e-5
+      scale: 6.5e-6
+    proposal: 1e-5
     latex: A^\mathrm{PS}(100x217)
   Aps_143x143:
     prior:
       dist: norm
-      loc: 6.3
-      scale: 2.
-    proposal: 2.
+      loc: 4.6e-5
+      scale: 5.1e-6
+    proposal: 1e-5
     latex: A^\mathrm{PS}(143x143)
   Aps_143x217:
     prior:
       dist: norm
-      loc: 6.0
-      scale: 2.
-    proposal: 2.
+      loc: 3.06e-5
+      scale: 3.05e-6
+    proposal: 1e-5
     latex: A^\mathrm{PS}(143x217)
   Aps_217x217:
     prior:
       dist: norm
-      loc: 17.0
-      scale: 2.
-    proposal: 2.
+      loc: 7.63e-5
+      scale: 7.6e-6
+    proposal: 1e-5
     latex: A^\mathrm{PS}(217x217)
   AdustTT:
     prior:
